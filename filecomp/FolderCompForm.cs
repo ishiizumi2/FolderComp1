@@ -75,7 +75,7 @@ namespace filecomp
         /// <param name="e"></param>
         private async void button2_Click(object sender, EventArgs e)
         {
-            fbd.SelectedPath = @"C:\Windows";
+            fbd.SelectedPath = StartSelectFolder;
             textBox1.Text = FolderSelect();
             if (Directory.Exists(textBox1.Text))
             {
