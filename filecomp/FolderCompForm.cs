@@ -26,8 +26,6 @@ namespace filecomp
         //FileList用
         FileListLibrary.FileListClass filelistclass = new FileListLibrary.FileListClass();
 
-        //dellpctest
-
         //FolderBrowserDialogクラスのインスタンスを作成
         FolderBrowserDialog fbd = new FolderBrowserDialog();
         string folder;
@@ -39,7 +37,7 @@ namespace filecomp
         string BeforeFolder;
         string AfterFolder;
         string StartSelectFolder;
-        string SetFolderName;
+        //string SetFolderName;
 
         public FolderCompForm()
         {
@@ -73,14 +71,17 @@ namespace filecomp
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void button2_Click(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)
         {
             fbd.SelectedPath = StartSelectFolder;
             textBox1.Text = FolderSelect();
             if (Directory.Exists(textBox1.Text))
             {
-                await Task.Run(() =>
-                {
+             
+                    FolderList1 = checkBox1.Checked ? Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.AllDirectories).ToList() : 
+                                                      Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
+                
+                    /*
                     if (checkBox1.Checked)
                     {
 
@@ -90,8 +91,8 @@ namespace filecomp
                     else
                     {
                         FolderList1 = Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
-                    }
-                });
+                    }*/
+                
             }
         }
 
@@ -100,14 +101,13 @@ namespace filecomp
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void button4_Click(object sender, EventArgs e)
+        private  void button4_Click(object sender, EventArgs e)
         {
             fbd.SelectedPath = folder;
             textBox2.Text = FolderSelect();
             if (Directory.Exists(textBox2.Text))
             {
-                await Task.Run(() =>
-                {
+              
                     if (checkBox1.Checked)
                     {
                         FolderList2 = Directory.EnumerateFiles(@textBox2.Text, Filter.Text, SearchOption.AllDirectories).ToList(); // サブ・ディレクトも含める
@@ -116,7 +116,7 @@ namespace filecomp
                     {
                         FolderList2 = Directory.EnumerateFiles(@textBox2.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
                     }
-                });
+               
             }
         }
 
@@ -155,8 +155,8 @@ namespace filecomp
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-            filelistclass.GetReadyList(FolderList1);//不要なファイルを削除する
-            filelistclass.GetReadyList(FolderList2);//不要なファイルを削除する
+            var a = filelistclass.GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList1);//不要なファイルを削除する
+            var b = filelistclass.GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList2);//不要なファイルを削除する
           
 
             //ファイル名を同じにするため前のフォルダ名を削除する
