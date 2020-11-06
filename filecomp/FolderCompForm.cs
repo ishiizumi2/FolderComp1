@@ -37,7 +37,8 @@ namespace filecomp
         string BeforeFolder;
         string AfterFolder;
         string StartSelectFolder;
-        //string SetFolderName;
+        string SetFolderName1;
+        string SetFolderName2;
 
         public FolderCompForm()
         {
@@ -74,25 +75,13 @@ namespace filecomp
         private void button2_Click(object sender, EventArgs e)
         {
             fbd.SelectedPath = StartSelectFolder;
-            textBox1.Text = FolderSelect();
-            if (Directory.Exists(textBox1.Text))
+            SetFolderName1 = FolderSelect();
+            textBox1.Text  = SetFolderName1;
+            if (Directory.Exists(SetFolderName1))
             {
-             
-                    FolderList1 = checkBox1.Checked ? Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.AllDirectories).ToList() : 
-                                                      Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
-                
-                    /*
-                    if (checkBox1.Checked)
-                    {
+                FolderList1 = checkBox1.Checked ? Directory.EnumerateFiles(@SetFolderName1, Filter.Text, SearchOption.AllDirectories).ToList() : 
+                                                  Directory.EnumerateFiles(@SetFolderName1, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
 
-                        FolderList1 = Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.AllDirectories).ToList(); // サブ・ディレクトも含める
-
-                    }
-                    else
-                    {
-                        FolderList1 = Directory.EnumerateFiles(@textBox1.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
-                    }*/
-                
             }
         }
 
@@ -104,19 +93,12 @@ namespace filecomp
         private  void button4_Click(object sender, EventArgs e)
         {
             fbd.SelectedPath = folder;
-            textBox2.Text = FolderSelect();
+            SetFolderName2 = FolderSelect();
+            textBox2.Text  = SetFolderName2;
             if (Directory.Exists(textBox2.Text))
             {
-              
-                    if (checkBox1.Checked)
-                    {
-                        FolderList2 = Directory.EnumerateFiles(@textBox2.Text, Filter.Text, SearchOption.AllDirectories).ToList(); // サブ・ディレクトも含める
-                    }
-                    else
-                    {
-                        FolderList2 = Directory.EnumerateFiles(@textBox2.Text, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
-                    }
-               
+                FolderList2 = checkBox1.Checked ? Directory.EnumerateFiles(@SetFolderName2, Filter.Text, SearchOption.AllDirectories).ToList() :
+                                                  Directory.EnumerateFiles(@SetFolderName2, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
             }
         }
 
@@ -155,22 +137,19 @@ namespace filecomp
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-            var a = filelistclass.GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList1);//不要なファイルを削除する
-            var b = filelistclass.GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList2);//不要なファイルを削除する
-          
 
-            //ファイル名を同じにするため前のフォルダ名を削除する
-            var query1 = FolderList1.Select(c => c.Substring(textBox1.Text.Length));
-            var query2 = FolderList2.Select(c => c.Substring(textBox2.Text.Length));
-
+            //比較に不要なファイルを削除して、ファイル名を同じにするため前のフォルダ名を削除する
+            var query1 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList1).Select(c => c.Substring(SetFolderName1.Length));
+            var query2 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList2).Select(c => c.Substring(SetFolderName2.Length));
+            
             textBox3.Text = query1.Union(query2).Count().ToString(); //全項目数
 
             foreach (var sdata in query1.Intersect(query2))//積集合
             {
                 int kind = 0;
                 string fcomp;
-                var query3 = (File.ReadLines(textBox1.Text + sdata, SJIS)).ToList();
-                var query4 = (File.ReadLines(textBox2.Text + sdata, SJIS)).ToList();
+                var query3 = (File.ReadLines(SetFolderName1 + sdata, SJIS)).ToList();
+                var query4 = (File.ReadLines(SetFolderName2 + sdata, SJIS)).ToList();
                 if (query3.SequenceEqual(query4)) //差分の判定をする
                 {
                     fcomp = "ファイルは同一です";
@@ -182,19 +161,19 @@ namespace filecomp
                     kind = 1;
                 }
 
-                FileInfo file1 = new FileInfo(textBox1.Text + sdata);
+                FileInfo file1 = new FileInfo(SetFolderName1 + sdata);
                 long size1 = file1.Length;
-                FileInfo file2 = new FileInfo(textBox2.Text + sdata);
+                FileInfo file2 = new FileInfo(SetFolderName2 + sdata);
                 long size2 = file2.Length;
                 FolderSetDatas.Add(new FoldetSetdata(
                    Path.GetFileName(sdata),
                    Path.GetDirectoryName(sdata).Substring(1),
                    fcomp,
-                   File.GetLastWriteTime(textBox1.Text + sdata).ToString().Substring(0,10),
-                   File.GetLastWriteTime(textBox1.Text + sdata).ToString().Substring(11),
+                   File.GetLastWriteTime(SetFolderName1 + sdata).ToString().Substring(0,10),
+                   File.GetLastWriteTime(SetFolderName1 + sdata).ToString().Substring(11),
                    size1.ToString("D"),
-                   File.GetLastWriteTime(textBox2.Text + sdata).ToString().Substring(0, 10),
-                   File.GetLastWriteTime(textBox2.Text + sdata).ToString().Substring(11),
+                   File.GetLastWriteTime(SetFolderName2 + sdata).ToString().Substring(0, 10),
+                   File.GetLastWriteTime(SetFolderName2 + sdata).ToString().Substring(11),
                    size2.ToString("D"),
                    Path.GetExtension(sdata),
                    kind));
@@ -202,14 +181,14 @@ namespace filecomp
 
             foreach (var sdata in query1.Except(query2))
             {
-                FileInfo file1 = new FileInfo(textBox1.Text + sdata);
+                FileInfo file1 = new FileInfo(SetFolderName1 + sdata);
                 long size1 = file1.Length;
                 FolderSetDatas.Add(new FoldetSetdata(
                    Path.GetFileName(sdata),
                    Path.GetDirectoryName(sdata).Substring(1),
                    "左側のみ",
-                   File.GetLastWriteTime(textBox1.Text + sdata).ToString().Substring(0, 10),
-                   File.GetLastWriteTime(textBox1.Text + sdata).ToString().Substring(11),
+                   File.GetLastWriteTime(SetFolderName1 + sdata).ToString().Substring(0, 10),
+                   File.GetLastWriteTime(SetFolderName1 + sdata).ToString().Substring(11),
                    size1.ToString("D"),
                    "－",
                    "－",
@@ -219,7 +198,7 @@ namespace filecomp
             }
             foreach (var sdata in query2.Except(query1))
             {
-                FileInfo file2 = new FileInfo(textBox2.Text + sdata);
+                FileInfo file2 = new FileInfo(SetFolderName2 + sdata);
                 long size2 = file2.Length;
                 FolderSetDatas.Add(new FoldetSetdata(
                    Path.GetFileName(sdata),
@@ -228,8 +207,8 @@ namespace filecomp
                    "－",
                    "－",
                    "－",
-                   File.GetLastWriteTime(textBox2.Text + sdata).ToString().Substring(0, 10),
-                   File.GetLastWriteTime(textBox2.Text + sdata).ToString().Substring(11),
+                   File.GetLastWriteTime(SetFolderName2 + sdata).ToString().Substring(0, 10),
+                   File.GetLastWriteTime(SetFolderName2 + sdata).ToString().Substring(11),
                    size2.ToString("D"), 
                    Path.GetExtension(sdata),
                    3));
@@ -312,7 +291,7 @@ namespace filecomp
             using (StreamWriter sw = new StreamWriter(strFileName, false, SJIS))
             {
                 //フォルダ名書き込み
-                string FolderName = textBox1.Text + "と" + textBox2.Text + "の比較" + "\n";
+                string FolderName = SetFolderName1 + "と" + SetFolderName2 + "の比較" + "\n";
                 sw.Write(FolderName);
 
                 //現在の日付・時刻
@@ -373,8 +352,8 @@ namespace filecomp
             if ((index >= 0) && (index < dataGridView1.RowCount))
             {
                 FileCompForm form2 = new FileCompForm();
-                form2.FileName1 = textBox1.Text + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名1
-                form2.FileName2 = textBox2.Text + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名2
+                form2.FileName1 = SetFolderName1 + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名1
+                form2.FileName2 = SetFolderName2 + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名2
                 form2.Show();
             }
         }
@@ -669,6 +648,56 @@ namespace filecomp
                     writer.WriteLine(Path.Combine(item.Foldername , item.Filename));
                 }
             } 
+        }
+
+        private void FileCopyBtn_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        /// <summary>
+        /// 引数のListから比較対象外のファイルを削除する
+        /// 設定ファイル exclude.txt
+        /// </summary>
+        private List<string> GetReadyList(string wfolder, List<String> folderlist)
+        {
+            if (!(folderlist?.Count > 0))
+            {
+                return folderlist; //空なら抜ける
+            }
+            List<string> extension = new List<string>();//管理しない拡張子
+            List<string> unnecessary = new List<string>();//管理しないファイル
+
+            string FileName = Path.Combine(wfolder, Excludefilename);//除外設定ファイル
+            if (File.Exists(FileName))
+            {
+                IEnumerable<string> lines = File.ReadLines(FileName, SJIS);
+                foreach (var line in lines.Where(c => c.Length > 2).Where(c => c.Substring(0, 2) == "*."))
+                {
+                    extension.Add(line);
+                }
+
+                foreach (var line in lines.Where(c => c.Length > 2).Where(c => c.Substring(0, 2) == "$$"))
+                {
+                    unnecessary.Add(line.Substring(2));
+                }
+            }
+            else
+            {
+                return folderlist;
+            }
+
+            foreach (var sdat in extension) //指定された拡張子のファイルを削除する
+            {
+                folderlist.RemoveAll(c => Path.GetExtension(c).ToLower() == sdat.Substring(1).TrimEnd().ToLower());
+            }
+
+            foreach (var tdat in unnecessary) //管理しないファイルを削除する
+            {
+                folderlist.RemoveAll(c => Path.GetFileName(c).ToLower() == tdat.ToLower());
+            }
+            folderlist.RemoveAll(c => c.IndexOf("workarea", StringComparison.OrdinalIgnoreCase) >= 0);
+            return folderlist;
         }
     }
 
