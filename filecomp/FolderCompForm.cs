@@ -26,6 +26,8 @@ namespace filecomp
         //FileList用
         FileListLibrary.FileListClass filelistclass = new FileListLibrary.FileListClass();
 
+        List<FileSetdata.FileSetdata> copyfilelist = new List<FileSetdata.FileSetdata>();//コピー対象ファイル
+
         //FolderBrowserDialogクラスのインスタンスを作成
         FolderBrowserDialog fbd = new FolderBrowserDialog();
         string folder;
@@ -652,7 +654,21 @@ namespace filecomp
 
         private void FileCopyBtn_Click(object sender, EventArgs e)
         {
-
+            List<FileSetdata.FileSetdata> filesetdatas = new List<FileSetdata.FileSetdata>();
+            foreach(var sdat in FolderSetDatas)
+            {
+                filesetdatas.Add(new FileSetdata.FileSetdata(
+                    sdat.Filename,
+                    sdat.Foldername,
+                    sdat.Extension
+                   )
+                );
+            }
+            copyfilelist =  filelistclass.CopyFileListCreate(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), filesetdatas);
+            filelistclass.setfoldername = SetFolderName1;
+            filelistclass.FolderCopy(copyfilelist, WorkFolder, true);//フオルダ1
+            filelistclass.setfoldername = SetFolderName2;
+            filelistclass.FolderCopy(copyfilelist, WorkFolder, false);//フオルダ2
         }
 
         /// <summary>
