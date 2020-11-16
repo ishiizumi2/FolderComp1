@@ -45,7 +45,7 @@ namespace filecomp
         public FolderCompForm()
         {
             InitializeComponent();
-            XMLread();
+            Initial_processing();
         }
 
         /// <summary>
@@ -67,6 +67,30 @@ namespace filecomp
                 AfterFolder = infos.Select(c => c.Element("AfterFolder").Value).FirstOrDefault() ?? @"\変更後\";
                 StartSelectFolder = infos.Select(c => c.Element("StartSelectFolder").Value).FirstOrDefault() ?? @"C:\";
             }
+        }
+
+        /// <summary>
+        /// 初期処理
+        /// </summary>
+        private void Initial_processing()
+        {
+            XMLread();
+
+            if (Directory.Exists(WorkFolder))//前回分のフォルダーが存在したら削除する
+            {
+                Directory.Delete(WorkFolder, true);
+            }
+            Directory.CreateDirectory(WorkFolder);//作業用フォルダ作成
+
+            //プロパテイに固定値代入
+            filelistclass.workfolder = WorkFolder;
+            filelistclass.excludefilename = Excludefilename;
+            filelistclass.selectfilename = Selectfilename;
+            filelistclass.beforeFolder = BeforeFolder;
+            filelistclass.afterFolder = AfterFolder;
+
+            filelistclass.fileCopy(WorkFolder, Excludefilename);
+            filelistclass.fileCopy(WorkFolder, Selectfilename);
         }
 
         /// <summary>
@@ -654,21 +678,23 @@ namespace filecomp
 
         private void FileCopyBtn_Click(object sender, EventArgs e)
         {
-            List<FileSetdata.FileSetdata> filesetdatas = new List<FileSetdata.FileSetdata>();
-            foreach(var sdat in FolderSetDatas)
-            {
-                filesetdatas.Add(new FileSetdata.FileSetdata(
-                    sdat.Filename,
-                    sdat.Foldername,
-                    sdat.Extension
-                   )
-                );
-            }
-            copyfilelist =  filelistclass.CopyFileListCreate(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), filesetdatas);
+            //変更前
             filelistclass.setfoldername = SetFolderName1;
-            filelistclass.FolderCopy(copyfilelist, WorkFolder, true);//フオルダ1
+            if ((!String.IsNullOrEmpty(SetFolderName1)) && (Directory.Exists(SetFolderName1)))
+            {
+                filelistclass.FolderCopy(
+                    filelistclass.CopyFileListCreate(WorkFolder, filelistclass.ListOfFiles()),
+                    WorkFolder, true);
+            }
+            //変更後
             filelistclass.setfoldername = SetFolderName2;
-            filelistclass.FolderCopy(copyfilelist, WorkFolder, false);//フオルダ2
+            if ((!String.IsNullOrEmpty(SetFolderName2)) && (Directory.Exists(SetFolderName2)))
+            {
+                filelistclass.FolderCopy(
+                    filelistclass.CopyFileListCreate(WorkFolder, filelistclass.ListOfFiles()),
+                    WorkFolder, false);
+            }
+            MessageBox.Show("コピー完了");
         }
 
         /// <summary>
