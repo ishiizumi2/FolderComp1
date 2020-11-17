@@ -102,12 +102,11 @@ namespace filecomp
         {
             fbd.SelectedPath = StartSelectFolder;
             SetFolderName1 = FolderSelect();
-            textBox1.Text  = SetFolderName1;
             if (Directory.Exists(SetFolderName1))
             {
+                textBox1.Text = SetFolderName1;
                 FolderList1 = checkBox1.Checked ? Directory.EnumerateFiles(@SetFolderName1, Filter.Text, SearchOption.AllDirectories).ToList() : 
                                                   Directory.EnumerateFiles(@SetFolderName1, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
-
             }
         }
 
@@ -120,9 +119,9 @@ namespace filecomp
         {
             fbd.SelectedPath = folder;
             SetFolderName2 = FolderSelect();
-            textBox2.Text  = SetFolderName2;
-            if (Directory.Exists(textBox2.Text))
+            if (Directory.Exists(SetFolderName2))
             {
+                textBox2.Text = SetFolderName2;
                 FolderList2 = checkBox1.Checked ? Directory.EnumerateFiles(@SetFolderName2, Filter.Text, SearchOption.AllDirectories).ToList() :
                                                   Directory.EnumerateFiles(@SetFolderName2, Filter.Text, SearchOption.TopDirectoryOnly).ToList(); //現在のディレクトリのみ
             }
@@ -163,20 +162,16 @@ namespace filecomp
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-
             //比較に不要なファイルを削除して、ファイル名を同じにするため前のフォルダ名を削除する
             var query1 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList1).Select(c => c.Substring(SetFolderName1.Length));
             var query2 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList2).Select(c => c.Substring(SetFolderName2.Length));
-            
             textBox3.Text = query1.Union(query2).Count().ToString(); //全項目数
 
             foreach (var sdata in query1.Intersect(query2))//積集合
             {
                 int kind = 0;
                 string fcomp;
-                var query3 = (File.ReadLines(SetFolderName1 + sdata, SJIS)).ToList();
-                var query4 = (File.ReadLines(SetFolderName2 + sdata, SJIS)).ToList();
-                if (query3.SequenceEqual(query4)) //差分の判定をする
+                if ((File.ReadLines(SetFolderName1 + sdata, SJIS)).ToList().SequenceEqual((File.ReadLines(SetFolderName2 + sdata, SJIS)).ToList())) //差分の判定をする
                 {
                     fcomp = "ファイルは同一です";
                     kind = 4;
@@ -205,7 +200,7 @@ namespace filecomp
                    kind));
             }
 
-            foreach (var sdata in query1.Except(query2))
+            foreach (var sdata in query1.Except(query2))//差集合　query1のみにある
             {
                 FileInfo file1 = new FileInfo(SetFolderName1 + sdata);
                 long size1 = file1.Length;
@@ -222,7 +217,8 @@ namespace filecomp
                    Path.GetExtension(sdata),
                    2));
             }
-            foreach (var sdata in query2.Except(query1))
+
+            foreach (var sdata in query2.Except(query1))//差集合　query2のみにある
             {
                 FileInfo file2 = new FileInfo(SetFolderName2 + sdata);
                 long size2 = file2.Length;
@@ -275,20 +271,20 @@ namespace filecomp
             foreach (DataGridViewColumn c in dataGridView1.Columns)
                 c.SortMode = DataGridViewColumnSortMode.NotSortable;
             dataGridView1.Columns[10].Visible = false;//列の非表示
-            foreach (var item in FolderSetDatas.Select((data, index) => new { data, index }))
+            foreach (var item in FolderSetDatas.Select((data, index) => new { data, index }))//行に色を付ける
             {
-                switch (int.Parse(dataGridView1[10, item.index].Value.ToString()))
+                switch (dataGridView1[10, item.index].Value.ToString())
                 {
-                    case 1:
+                    case "1":
                         dataGridView1.Rows[item.index].DefaultCellStyle.BackColor = Color.Orange;
                         break;
-                    case 2:
+                    case "2":
                         dataGridView1.Rows[item.index].DefaultCellStyle.BackColor = Color.LimeGreen;
                         break;
-                    case 3:
+                    case "3":
                         dataGridView1.Rows[item.index].DefaultCellStyle.BackColor = Color.Aqua;
                         break;
-                    case 4:
+                    case "4":
                         break;
                     default:
                         break;
@@ -378,8 +374,10 @@ namespace filecomp
             if ((index >= 0) && (index < dataGridView1.RowCount))
             {
                 FileCompForm form2 = new FileCompForm();
-                form2.FileName1 = SetFolderName1 + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名1
-                form2.FileName2 = SetFolderName2 + '\\' + dataGridView1[1, index].Value.ToString() + '\\' + dataGridView1[0, index].Value.ToString(); //比較するファイル名2
+                string filename = Path.Combine(dataGridView1[1, index].Value.ToString(), dataGridView1[0, index].Value.ToString());
+
+                form2.FileName1 = Path.Combine(SetFolderName1, filename);  //比較するファイル名1
+                form2.FileName2 = Path.Combine(SetFolderName2, filename);  //比較するファイル名2
                 form2.Show();
             }
         }
@@ -746,6 +744,7 @@ namespace filecomp
     /// <summary>
     /// 比較したフォルダのデータをdataridviewに設定する為のクラス
     /// </summary>
+    /// Kind 1:ファイルは異なります 2:左側のみ　3:右側のみ 4:ファイルは同一です
     class FoldetSetdata
     {
         public string Filename { get; private set; }
