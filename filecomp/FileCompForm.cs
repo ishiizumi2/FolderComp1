@@ -13,12 +13,9 @@ namespace filecomp
 {
     public partial class FileCompForm : Form
     {
-        public string FileName1,FileName2;//Form1でデータ設定される
+        public string FileName1 { get; set; }
+        public string FileName2 { get; set; }
         private List<int> RowDatas = new List<int>();//差分の行を記憶する
-        private List<FileData> query23 = new List<FileData>();
-        private List<FileData> query24 = new List<FileData>();
-        private List<int> query25 = new List<int>();
-        private List<int> query26 = new List<int>();
         Encoding SJIS = Encoding.GetEncoding("Shift_JIS");
 
         public FileCompForm()
@@ -47,15 +44,15 @@ namespace filecomp
         /// <param name="FileName2">比較ファイル名2</param>
         private void FileComp(string FileName1,string FileName2)
         {
-            List<FileData> query15 = new List<FileData>();
-            List<FileData> query16 = new List<FileData>();
-            int aOffset = 0;
-            int bOffset = 0;
-            int acount = 0;
-            int bcount = 0;
+            List<FileData> Change_file_list1 = new List<FileData>();
+            List<FileData> Change_file_list2 = new List<FileData>();
+            int Read_file_list_offset1 = 0;
+            int Read_file_list_offset2 = 0;
+            int diff_location1 = 0; //差分の位置
+            int diff_location2 = 0; //差分の位置
             int index2, index3;
-            int query3Postion = 0;
-            int query4Postion = 0;
+            int Read_file_list_offset_position1 = 0;//検索の位置　行番号
+            int Read_file_list_offset_position2 = 0;//検索の位置　行番号
 
             try
             {
@@ -65,160 +62,158 @@ namespace filecomp
                     return;
                 }
 
-                var query3 = (File.ReadLines(FileName1, System.Text.Encoding.GetEncoding("Shift_JIS"))).ToList();//左側のファイルを全て読み込んでListにする
-                var query4 = (File.ReadLines(FileName2, System.Text.Encoding.GetEncoding("Shift_JIS"))).ToList();//右側のファイルを全て読み込んでListにする
-                List<FileData> query13 = new List<FileData>();
-                List<FileData> query14 = new List<FileData>();
+                List<FileData> Read_file_list1 = new List<FileData>();
+                List<FileData> Read_file_list2 = new List<FileData>();
 
                 //ファイルから読み込んだテキストと行番号を代入する
-                foreach(var q3data in query3.Select((d3,index) => new {d3 ,index}))
+                foreach(var q3data in File.ReadLines(FileName1, SJIS).ToList().Select((d3,index) => new {d3 ,index}))
                 {
-                    query13.Add(new FileData(q3data.index+1, q3data.d3));
+                    Read_file_list1.Add(new FileData(q3data.index+1, q3data.d3));
                 }
-                foreach (var q4data in query4.Select((d4, index) => new { d4, index }))
+                foreach (var q4data in File.ReadLines(FileName2, SJIS).ToList().Select((d4, index) => new { d4, index }))
                 {
-                    query14.Add(new FileData(q4data.index+1, q4data.d4));
+                    Read_file_list2.Add(new FileData(q4data.index+1, q4data.d4));
                 }
 
 
-                int q13Count = query13.Count();
-                int q14Count = query14.Count();
+                int Read_file_list_count1 = Read_file_list1.Count();
+                int Read_file_list_count2 = Read_file_list2.Count();
 
                 //countが少ないシーケンスを大きいシーケンスにcountを合わせる
-                if (q13Count > q14Count)
+                if (Read_file_list_count1 > Read_file_list_count2)
                 {
-                    for (int i = 0; i < q13Count-q14Count; i++)
+                    for (int i = 0; i < Read_file_list_count1 - Read_file_list_count2; i++)
                     {
-                        query14.Add(new FileData(-1, " "));
+                        Read_file_list2.Add(new FileData(-1, " "));
                     }
+
                 }
                 else
                 {
-                    for (int i = 0; i < q14Count - q13Count; i++)
+                    for (int i = 0; i < Read_file_list_count2 - Read_file_list_count1; i++)
                     {
-                        query13.Add(new FileData(-1, " "));
+                        Read_file_list1.Add(new FileData(-1, " "));
                     }
                 }
 
-                foreach (var sdata in query13.Select((v3, index) => new { v3, index }))
+                foreach (var sdata in Read_file_list1.Select((v3, index) => new { v3, index }))
                 {
-                    query3Postion = sdata.index + aOffset;
-                    query4Postion = sdata.index + bOffset;
+                    Read_file_list_offset_position1 = sdata.index + Read_file_list_offset1;
+                    Read_file_list_offset_position2 = sdata.index + Read_file_list_offset2;
 
-                    //if ((query3Postion < query13.Count() - 1) && (query4Postion < query14.Count() - 1))
-                    if ((query3Postion < query13.Count()) && (query4Postion < query14.Count()))
+                    if ((Read_file_list_offset_position1 < Read_file_list_count1) && (Read_file_list_offset_position2 < Read_file_list_count2))
                     {
-                        if (query13[query3Postion].Filetext == query14[query4Postion].Filetext) //データ一致
+                        if (Read_file_list1[Read_file_list_offset_position1].Filetext == Read_file_list2[Read_file_list_offset_position2].Filetext) //テキスト一致
                         {
-                            query15.Add(query13[query3Postion]);
-                            query16.Add(query14[query4Postion]);
+                            Change_file_list1.Add(Read_file_list1[Read_file_list_offset_position1]);
+                            Change_file_list2.Add(Read_file_list2[Read_file_list_offset_position2]);
                         }
-                        else //データ不一致
+                        else //テキスト不一致　
                         {
-                            acount = 0;
-                            bcount = 0;
+                            diff_location1 = 0;
+                            diff_location2 = 0;
 
                             //skipで飛ばしてそれ以降のデータをListにする
-                            var results1 = query14.Select(s => s.Filetext).Skip(query4Postion).ToList();
+                            var results1 = Read_file_list2.Select(s => s.Filetext).Skip(Read_file_list_offset_position2).ToList();
                             //resultsの中で検索する　検索するデータがnullでないこと resultsから見つからない場合nullを返す
-                            if (!(String.IsNullOrEmpty(query13[query3Postion].Filetext)) && (results1.FirstOrDefault(c => c == query13[query3Postion].Filetext) != null))
+                            if (!(String.IsNullOrEmpty(Read_file_list1[Read_file_list_offset_position1].Filetext)) && (results1.FirstOrDefault(c => c == Read_file_list1[Read_file_list_offset_position1].Filetext) != null))
                             {
-                                index2 = results1.FindIndex(c => c == query13[query3Postion].Filetext);//query4から見つかった
+                                index2 = results1.FindIndex(c => c == Read_file_list1[Read_file_list_offset_position1].Filetext);//query4から見つかった
                             }
                             else
                                 index2 = 0;
 
-                            if (index2 > 0)//query4から見つかった
+                            if (index2 > 0)//Read_file_list2から見つかった
                             {
                                 if (index2 < 100)//100以上なら差分が大きすぎて別の物と判断する
-                                    bcount = index2;
+                                    diff_location2 = index2;
                             }
-                            else //query4から見つかっていないのでquery3から検索を行う
+                            else //Read_file_list2から見つかっていないのでRead_file_list1から検索を行う
                             {
                                 //skipで飛ばしてそれ以降のデータをListにする
-                                var results2 = query13.Select(s => s.Filetext).Skip(query3Postion).ToList();
+                                var results2 = Read_file_list1.Select(s => s.Filetext).Skip(Read_file_list_offset_position1).ToList();
                                 //results2の中で検索する　検索するデータがnullでないこと results2から見つからない場合nullを返す
-                                if (!(String.IsNullOrEmpty(query14[query4Postion].Filetext)) && (results2.FirstOrDefault(c => c == query14[query4Postion].Filetext) != null))
+                                if (!(String.IsNullOrEmpty(Read_file_list2[Read_file_list_offset_position2].Filetext)) && (results2.FirstOrDefault(c => c == Read_file_list2[Read_file_list_offset_position2].Filetext) != null))
                                 {
-                                    index3 = results2.FindIndex(c => c == query14[query4Postion].Filetext);
+                                    index3 = results2.FindIndex(c => c == Read_file_list2[Read_file_list_offset_position2].Filetext);
                                 }
                                 else
                                     index3 = 0;
 
                                 if (index3 < 100) //100以上なら差分が大きすぎて別の物と判断する
-                                    acount = index3;
+                                    diff_location1 = index3;
                             }
 
 
-                            if ((acount == 0) && (bcount > 0))
+                            if ((diff_location1 == 0) && (diff_location2 > 0))
                             {
 
-                                foreach (var item in query14.Skip(query4Postion).Take(bcount))//skipでとばして差分の数だけ取り出している
+                                foreach (var item in Read_file_list2.Skip(Read_file_list_offset_position2).Take(diff_location2))//skipでとばして差分の数だけ取り出している
                                 {
-                                    query15.Add(new FileData(-1, " "));
-                                    query16.Add(item);
+                                    Change_file_list1.Add(new FileData(-1, " "));
+                                    Change_file_list2.Add(item);
                                 }
-                                query15.Add(query13.ElementAtOrDefault(query3Postion));
-                                query16.Add(query14.ElementAtOrDefault(query4Postion + bcount));
-                                bOffset = bOffset + bcount;
+                                Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1));
+                                Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2 + diff_location2));
+                                Read_file_list_offset2 = Read_file_list_offset2 + diff_location2;
 
                             }
                             else
-                            if ((bcount == 0) && (acount > 0))
+                            if ((diff_location2 == 0) && (diff_location1 > 0))
                             {
-                                foreach (var item in query13.Skip(query3Postion).Take(acount))//skipでとばして差分の数だけ取り出している
+                                foreach (var item in Read_file_list1.Skip(Read_file_list_offset_position1).Take(diff_location1))//skipでとばして差分の数だけ取り出している
                                 {
-                                    query15.Add(item);
-                                    query16.Add(new FileData(-1, " "));
+                                    Change_file_list1.Add(item);
+                                    Change_file_list2.Add(new FileData(-1, " "));
                                 }
 
-                                query15.Add(query13.ElementAtOrDefault(query3Postion + acount));
-                                query16.Add(query14.ElementAtOrDefault(query4Postion));
-                                aOffset = aOffset + acount;
+                                Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1 + diff_location1));
+                                Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2));
+                                Read_file_list_offset1 = Read_file_list_offset1 + diff_location1;
                             }
                             else 
-                            if ((bcount == 0) && (acount == 0))
+                            if ((diff_location2 == 0) && (diff_location1 == 0))
                             {
-                                if (query13.Count() > 1){
-                                   if (query13[query3Postion + 1].Filetext == query14[query4Postion].Filetext)
+                                if (Read_file_list1.Count() > 1){
+                                   if (Read_file_list1[Read_file_list_offset_position1 + 1].Filetext == Read_file_list2[Read_file_list_offset_position2].Filetext)
                                    {
-                                       query15.Add(query13.ElementAtOrDefault(query3Postion));
-                                       query15.Add(query13.ElementAtOrDefault(query3Postion + 1));
-                                       query16.Add(new FileData(-1, " ")); 
-                                       query16.Add(query14.ElementAtOrDefault(query4Postion));
-                                       aOffset = aOffset + 1;
+                                       Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1));
+                                       Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1 + 1));
+                                       Change_file_list2.Add(new FileData(-1, " ")); 
+                                       Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2));
+                                       Read_file_list_offset1 = Read_file_list_offset1 + 1;
                                    }
                                    else
-                                   if (query14[query4Postion + 1].Filetext == query13[query3Postion].Filetext)
+                                   if (Read_file_list2[Read_file_list_offset_position2 + 1].Filetext == Read_file_list1[Read_file_list_offset_position1].Filetext)
                                    {
-                                       query16.Add(query14.ElementAtOrDefault(query4Postion));
-                                       query16.Add(query14.ElementAtOrDefault(query4Postion + 1));
-                                       query15.Add(new FileData(-1, " "));
-                                       query15.Add(query13.ElementAtOrDefault(query3Postion));
-                                       bOffset = bOffset + 1;
+                                       Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2));
+                                       Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2 + 1));
+                                       Change_file_list1.Add(new FileData(-1, " "));
+                                       Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1));
+                                       Read_file_list_offset2 = Read_file_list_offset2 + 1;
                                    }
                                    else
                                    {
-                                       query15.Add(query13.ElementAtOrDefault(query3Postion));
-                                       query16.Add(query14.ElementAtOrDefault(query4Postion));
+                                       Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1));
+                                       Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2));
                                    }
                                 }
                                 else  //1行しか存在しない場合
                                 {
-                                   query15.Add(query13.ElementAtOrDefault(query3Postion));
-                                   query16.Add(query14.ElementAtOrDefault(query4Postion));
+                                   Change_file_list1.Add(Read_file_list1.ElementAtOrDefault(Read_file_list_offset_position1));
+                                   Change_file_list2.Add(Read_file_list2.ElementAtOrDefault(Read_file_list_offset_position2));
                                 }
                             }
                         }
                     }
                 }
 
-                dataGridView1.RowCount = query15.Count();
+                dataGridView1.RowCount = Change_file_list1.Count();
                 //並び替えができないようにする
                 foreach (DataGridViewColumn c in dataGridView1.Columns)
                     c.SortMode = DataGridViewColumnSortMode.NotSortable;
 
-                var query17 = from data in query15.Zip(query16, (data5, data6) => new { data5, data6 }) select data;
+                var query17 = from data in Change_file_list1.Zip(Change_file_list2, (data5, data6) => new { data5, data6 }) select data;
                 foreach(var pair in query17.Select((v4, index4) => new { v4, index4 }))
                 {
                     var data5 = pair.v4.data5;
@@ -256,8 +251,7 @@ namespace filecomp
                         RowDatas.Add(pair.index4 + 1); //差分1行後 
                     }
                 }
-                query23 = new List<FileData>(query15);//Listのコピー
-                query24 = new List<FileData>(query16);//Listのコピー
+                
             }
             catch
             {
@@ -376,39 +370,7 @@ namespace filecomp
             Close();
         }
 
-        /// <summary>
-        /// 関数の最初の行を検索//implementation
-        /// </summary>
-        private void procedure_search()
-        {
-            
-            var query27 = new List<int>();
-
-            int ino = query23.FindIndex(s => s.Filetext.Trim() == "implementation");
-
-            //"implementation"以降の関数の行番号を取得
-            foreach (var item in query23.Skip(ino).Where(c => (c.Filetext.TrimStart().Length >= 9) && (c.Filetext.TrimStart().Substring(0, 8) == "function" || c.Filetext.TrimStart().Substring(0, 9) == "procedure")))
-                query25.Add(item.Filerowno);
-            foreach (var item in query24.Skip(ino).Where(c => (c.Filetext.TrimStart().Length >= 9) && (c.Filetext.TrimStart().Substring(0, 8) == "function" || c.Filetext.TrimStart().Substring(0, 9) == "procedure")))
-                query26.Add(item.Filerowno);
-
-            foreach(var data in RowDatas)
-            {
-                
-                int fno = query25.FirstOrDefault(c => c > data);//差分の行より大きい
-                if(fno != 0)//見つかった
-                {
-                    int eno = query25.IndexOf(fno)-1;
-                    if( eno >= 0  )             //差分の有る関数の先頭行番号 
-                        query27.Add(eno);
-                    query27.Add(query23.Take(fno).LastOrDefault(c => ((c.Filetext.TrimStart().Length >= 3)&&(c.Filetext.TrimStart().Substring(0, 3) == "end"))).Filerowno);//その関数内の最後の"end"の行番号
-                }else
-                {
-                    query27.Add(query25.Last());//一番最後の関数の先頭行番号
-                    query27.Add(query23.Last().Filerowno);//一番最後の行番号
-                }
-            }
-        }
+  
     }
     class FileData
     {

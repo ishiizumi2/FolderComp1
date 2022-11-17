@@ -163,6 +163,13 @@ namespace filecomp
         private void button1_Click(object sender, EventArgs e)
         {
             //比較に不要なファイルを削除して、ファイル名を同じにするため前のフォルダ名を削除する
+
+            if (String.IsNullOrEmpty(SetFolderName1) || String.IsNullOrEmpty(SetFolderName2))
+            {
+                MessageBox.Show("フォルダ名が入力されていません");
+                return;
+            }
+                
             var query1 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList1).Select(c => c.Substring(SetFolderName1.Length));
             var query2 = GetReadyList(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), FolderList2).Select(c => c.Substring(SetFolderName2.Length));
             textBox3.Text = query1.Union(query2).Count().ToString(); //全項目数
@@ -422,6 +429,8 @@ namespace filecomp
                 sw.WriteLine("リリースバージョン");
                 sw.WriteLine("客先名");
                 sw.WriteLine("指番");
+                sw.WriteLine("");
+                sw.WriteLine("No,変更されたファイル名,更新前日付,時刻,更新後日付,時刻,更新前サイズ,更新後サイズ");
                 foreach (var (item, index) in FolderSetDatas.Select((item, index) => (item, index)))
                 {
                     string str = "";
@@ -431,8 +440,9 @@ namespace filecomp
                     string beforetime = item.Lefttime;
                     string afterdate = item.Rightdate;
                     string aftertime = item.Righttime;
+                    string beforesize = item.Leftsize;
                     string aftersize = item.Rightsize;
-                    str = no + "," + name + "," + beforedate + "," + beforetime + "," + afterdate + "," + aftertime + "," + aftersize;
+                    str = no + "," + name + "," + beforedate + "," + beforetime + "," + afterdate + "," + aftertime + "," + beforesize + "," + aftersize;
                     sw.WriteLine(str);
                 }
             }
