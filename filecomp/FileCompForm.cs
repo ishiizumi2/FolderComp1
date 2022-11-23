@@ -194,6 +194,9 @@ namespace filecomp
             
         }
 
+      
+
+
         /// <summary>
         /// ReadDFileListからTextを探す
         /// </summary>
@@ -392,4 +395,22 @@ namespace filecomp
         }
     }
     
+    class Changefile
+    {
+        public List<FileData> Change_file_list1 { get; private set; }
+        public List<FileData> Change_file_list2 { get; private set; }
+        public List<FileData> Read_file_list1 { get; private set; }
+        public List<FileData> Read_file_list2 { get; private set; }
+
+        public int Read_file_list_offset1 { get; private set; } 
+        public int Read_file_list_offset2 { get; private set; } 
+        public int diff_location1 { get; private set; } 
+        public int diff_location2 { get; private set; } 
+        public int Read_file_list_offset_position1 { get; private set; } 
+        public int Read_file_list_offset_position2 { get; private set; } 
+
+
+
+    }
+
 }
